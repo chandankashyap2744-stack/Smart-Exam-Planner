@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-Based Smart Exam Planner</title>
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: rgba(30, 41, 59, 0.75);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent-primary: #6366f1;
+      --accent-secondary: #06b6d4;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--bg-primary); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+    
+    .glow-bg {
+      position: fixed; top: -20%; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 450px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, rgba(168, 85, 247, 0.08) 50%, transparent 80%);
+      pointer-events: none; z-index: 0;
+    }
+
+    header {
+      position: relative; z-index: 10;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-logo {
+      width: 40px; height: 40px; background: var(--accent-gradient);
+      border-radius: var(--radius-sm); display: flex; align-items: center;
+      justify-content: center; color: #fff; font-weight: 700;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+    }
+    .brand-text h1 { font-size: 1.15rem; font-weight: 700; }
+    .brand-text p { font-size: 0.75rem; color: var(--text-muted); }
+
+    .badge-sdg {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.35rem 0.85rem; border-radius: 999px; font-size: 0.75rem;
+      font-weight: 600; background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3); color: #a5b4fc;
+    }
+
+    main {
+      position: relative; z-index: 1; max-width: 1280px;
+      margin: 0 auto; padding: 2rem 1.5rem; width: 100%; flex: 1;
+    }
+
+    .nav-tabs {
+      display: flex; gap: 0.5rem; background: var(--bg-secondary);
+      padding: 0.4rem; border-radius: var(--radius-md);
+      border: 1px solid var(--border-color); margin-bottom: 2rem; overflow-x: auto;
+    }
+
+    .tab-btn {
+      flex: 1; min-width: 140px; display: flex; align-items: center;
+      justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem;
+      border: none; background: transparent; color: var(--text-muted);
+      font-size: 0.875rem; font-weight: 600; border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+      background: var(--accent-gradient); color: #ffffff;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-md); padding: 1.5rem;
+      backdrop-filter: blur(12px); box-shadow: var(--shadow); margin-bottom: 1.5rem;
+    }
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);
+    }
+    .card-title { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+
+    .form-group { margin-bottom: 1.25rem; }
+    label { display: block; font-size: 0.825rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; }
+    input, select {
+      width: 100%; background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color); color: var(--text-main);
+      padding: 0.7rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.9rem;
+    }
+    input:focus, select:focus {
+      outline: none; border-color: var(--accent-primary);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      padding: 0.7rem 1.25rem; font-size: 0.875rem; font-weight: 600;
+      border-radius: var(--radius-sm); border: none; cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-primary { background: var(--accent-gradient); color: white; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
+    .btn-primary:hover { opacity: 0.95; transform: translateY(-1px); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.08); color: var(--text-main); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.12); }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .btn-sm { padding: 0.4rem 0.75rem; font-size: 0.75rem; }
+
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 0.75rem 1rem; background: rgba(15, 23, 42, 0.5); color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
+    td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+
+    .badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-high { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-med { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-low { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-rev { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+    .schedule-day { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem; }
+    .schedule-day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .day-title { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .day-slots { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .slot-item { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); border-radius: var(--radius-sm); }
+    .slot-item.completed { opacity: 0.5; text-decoration: line-through; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); }
+    .slot-info { display: flex; align-items: center; gap: 0.75rem; }
+    .slot-checkbox { width: 18px; height: 18px; accent-color: var(--success); cursor: pointer; }
+
+    .stat-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; }
+    .stat-icon { width: 48px; height: 48px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; background: rgba(99, 102, 241, 0.15); color: var(--accent-primary); }
+    .stat-value { font-size: 1.5rem; font-weight: 800; }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); }
+
+    .timer-box { text-align: center; padding: 2rem 1rem; background: radial-gradient(circle at center, rgba(99, 102, 241, 0.12) 0%, transparent 70%); border-radius: var(--radius-md); border: 1px dashed var(--border-color); }
+    .timer-display { font-family: 'Space Grotesk', monospace; font-size: 3.5rem; font-weight: 700; margin: 1rem 0; color: #fff; }
+    .timer-controls { display: flex; justify-content: center; gap: 0.75rem; }
+
+    .ai-rules-banner { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; }
+    .ai-rules-title { font-size: 0.95rem; font-weight: 700; color: #a5b4fc; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .ai-rules-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; font-size: 0.825rem; color: var(--text-muted); }
+    .ai-rule-item { display: flex; align-items: center; gap: 0.5rem; background: rgba(15, 23, 42, 0.4); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); }
+
+    .empathy-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; }
+    .empathy-card { padding: 1rem; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); }
+    .empathy-card h4 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem; }
+    .empathy-card ul { list-style-type: none; font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.35rem; }
+    .empathy-card li::before { content: "• "; color: var(--accent-primary); font-weight: bold; }
+
+    .progress-bar-container { width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 999px; overflow: hidden; margin: 0.5rem 0; }
+    .progress-bar-fill { height: 100%; background: var(--accent-gradient); border-radius: 999px; transition: width 0.4s ease; }
+    footer { border-top: 1px solid var(--border-color); padding: 1.5rem 2rem; text-align: center; font-size: 0.8rem; color: var(--text-muted); background: var(--bg-secondary); margin-top: auto; }
+  </style>
+</head>
+<body>
+  <div class="glow-bg"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">AI</div>
+      <div class="brand-text">
+        <h1>Smart Exam Planner</h1>
+        <p>AI-Based Adaptive Study & Revision Assistant</p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <span class="badge-sdg"><i data-lucide="award" style="width:14px; height:14px;"></i> SDG 3 & 4 Aligned</span>
+      <button class="btn btn-secondary btn-sm" onclick="loadSampleDemo()"><i data-lucide="sparkles" style="width:14px; height:14px;"></i> Load Sample Demo</button>
+    </div>
+  </header>
+
+  <!-- Main Application Body -->
+  <main>
+    <nav class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('planner')"><i data-lucide="sliders" style="width:16px; height:16px;"></i> Subject Setup & Config</button>
+      <button class="tab-btn" onclick="switchTab('matrix')"><i data-lucide="brain-circuit" style="width:16px; height:16px;"></i> AI Priority Engine</button>
+      <button class="tab-btn" onclick="switchTab('schedule')"><i data-lucide="calendar" style="width:16px; height:16px;"></i> Generated Timetable</button>
+      <button class="tab-btn" onclick="switchTab('focus')"><i data-lucide="clock" style="width:16px; height:16px;"></i> Focus Mode & Pomodoro</button>
+      <button class="tab-btn" onclick="switchTab('canvas')"><i data-lucide="layout-grid" style="width:16px; height:16px;"></i> 4W Canvas & Empathy</button>
+    </nav>
+
+    <!-- Tab 1: Subject Setup & Preferences -->
+    <section id="tab-planner" class="tab-pane active">
+      <div class="ai-rules-banner">
+        <div class="ai-rules-title"><i data-lucide="cpu" style="width:18px; height:18px;"></i> Rule-Based AI Engine Active</div>
+        <div class="ai-rules-list">
+          <div class="ai-rule-item"><span>1. Exam Urgency:</span> <strong>Dynamic day-multiplier</strong></div>
+          <div class="ai-rule-item"><span>2. Difficulty Weight:</span> <strong>Allocates +40% study slots</strong></div>
+          <div class="ai-rule-item"><span>3. Confidence Gap:</span> <strong>Injects diagnostic revision</strong></div>
+          <div class="ai-rule-item"><span>4. Workload Limit:</span> <strong>Enforces daily cognitive caps</strong></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i data-lucide="plus-circle" style="width:18px; height:18px; color:var(--accent-primary);"></i> Add / Update Subject</h2>
+          </div>
+          <form id="subject-form" onsubmit="handleAddSubject(event)">
+            <div class="form-group">
+              <label>Subject Name</label>
+              <input type="text" id="sub-name" placeholder="e.g. Mathematics, Physics, English" required />
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Exam Date</label>
+                <input type="date" id="sub-date" required />
+              </div>
+              <div class="form-group">
+                <label>Total Chapters / Units</label>
+                <input type="number" id="sub-chapters" min="1" max="50" value="6" required />
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Perceived Difficulty (1 to 5)</label>
+                <select id="sub-diff">
+                  <option value="1">1 - Easy</option>
+                  <option value="2">2 - Moderate</option>
+                  <option value="3" selected>3 - Challenging</option>
+                  <option value="4">4 - Hard</option>
+                  <option value="5">5 - Very Hard</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Current Confidence (1 to 5)</label>
+                <select id="sub-conf">
+                  <option value="1">1 - Low (Needs Re-learning)</option>
+                  <option value="2" selected>2 - Below Average</option>
+                  <option value="3">3 - Moderate</option>
+                  <option value="4">4 - Good</option>
+                  <option value="5">5 - Confident / Mastered</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">
+              <i data-lucide="plus" style="width:16px; height:16px;"></i> Add Subject to Planner
+            </button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i data-lucide="settings" style="width:18px; height:18px; color:var(--accent-secondary);"></i> Daily Study Preferences</h2>
+          </div>
+          <div class="form-group">
+            <label>Available Daily Study Time (Hours)</label>
+            <input type="number" id="daily-hours" min="1" max="14" value="4" onchange="updatePlanner()" />
+          </div>
+          <div class="form-group">
+            <label>Session Duration & Structure</label>
+            <select id="session-block" onchange="updatePlanner()">
+              <option value="45">45 min study + 10 min break (High Retention)</option>
+              <option value="60" selected>60 min study + 15 min break (Standard)</option>
+              <option value="90">90 min deep work + 20 min break (Intensive)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Revision Buffer Before Exam</label>
+            <select id="revision-buffer" onchange="updatePlanner()">
+              <option value="2" selected>2 Days Dedicated Final Revision</option>
+              <option value="3">3 Days Dedicated Final Revision</option>
+              <option value="1">1 Day Crash Revision</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="generateAISchedule()" style="width: 100%;">
+            <i data-lucide="sparkles" style="width:16px; height:16px;"></i> Generate Smart AI Timetable
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i data-lucide="book-open" style="width:18px; height:18px;"></i> Configured Subjects (<span id="subject-count">0</span>)</h2>
+          <button class="btn btn-danger btn-sm" onclick="clearAllSubjects()">Clear All</button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Exam Date</th>
+                <th>Days Left</th>
+                <th>Chapters</th>
+                <th>Difficulty</th>
+                <th>Confidence</th>
+                <th>AI Priority Score</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="subject-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: AI Priority Matrix -->
+    <section id="tab-matrix" class="tab-pane">
+      <div class="grid-3" style="margin-bottom: 1.5rem;">
+        <div class="stat-card">
+          <div class="stat-icon"><i data-lucide="target"></i></div>
+          <div>
+            <div class="stat-value" id="stat-high-pri">0</div>
+            <div class="stat-label">Critical / High Priority</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="color:var(--accent-secondary); background:rgba(6,182,212,0.15);"><i data-lucide="clock"></i></div>
+          <div>
+            <div class="stat-value" id="stat-total-hours">0 hrs</div>
+            <div class="stat-label">Estimated Hours Required</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="color:var(--success); background:rgba(16,185,129,0.15);"><i data-lucide="smile"></i></div>
+          <div>
+            <div class="stat-value" id="stat-stress-index">Low</div>
+            <div class="stat-label">Predicted Stress Index</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i data-lucide="bar-chart-2" style="width:18px; height:18px;"></i> Priority Distribution</h2>
+          </div>
+          <div id="priority-bars" style="display:flex; flex-direction:column; gap:1rem;"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i data-lucide="lightbulb" style="width:18px; height:18px; color:var(--warning);"></i> AI Recommendations</h2>
+          </div>
+          <div id="ai-insights" style="display:flex; flex-direction:column; gap:0.75rem;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Generated Timetable & Dynamic Progress -->
+    <section id="tab-schedule" class="tab-pane">
+      <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 700;">Personalized Daily Study & Revision Plan</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Check off completed sessions to dynamically update progress.</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary btn-sm" onclick="recalculateAdaptivePlan()"><i data-lucide="refresh-cw" style="width:14px; height:14px;"></i> Re-balance Plan</button>
+          <button class="btn btn-primary btn-sm" onclick="window.print()"><i data-lucide="printer" style="width:14px; height:14px;"></i> Print Plan</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <span style="font-size: 0.85rem; font-weight: 600;">Overall Syllabus Coverage</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent-primary);" id="progress-percent">0%</span>
+        </div>
+        <div class="progress-bar-container"><div class="progress-bar-fill" id="progress-bar" style="width: 0%;"></div></div>
+      </div>
+
+      <div id="schedule-container"></div>
+    </section>
+
+    <!-- Tab 4: Focus Mode & Pomodoro -->
+    <section id="tab-focus" class="tab-pane">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i data-lucide="timer" style="width:18px; height:18px;"></i> Active Focus Session</h2>
+            <span class="badge badge-med" id="timer-mode">Study Mode</span>
+          </div>
+          <div class="timer-box">
+            <p style="font-size: 0.9rem; color: var(--text-muted);" id="current-focus-task">Select a subject session to begin deep work</p>
+            <div class="timer-display" id="timer-display">25:00</div>
+            <div class="timer-controls">
+              <button class="btn btn-primary" id="timer-start-btn" onclick="toggleTimer()"><i data-lucide="play" style="width:16px; height:16px;"></i> Start Session</button>
+              <button class="btn btn-secondary" onclick="resetTimer()"><i data-lucide="rotate-ccw" style="width:16px; height:16px;"></i> Reset</button>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="setTimerPreset(25, 'Study Session (25m)')">25m Pomodoro</button>
+            <button class="btn btn-secondary btn-sm" onclick="setTimerPreset(50, 'Deep Work (50m)')">50m Deep Work</button>
+            <button class="btn btn-secondary btn-sm" onclick="setTimerPreset(5, 'Short Break (5m)')">5m Break</button>
+            <button class="btn btn-secondary btn-sm" onclick="setTimerPreset(15, 'Long Break (15m)')">15m Break</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i data-lucide="shield-check" style="width:18px; height:18px; color:var(--success);"></i> Well-Being & Stress Reduction (SDG 3)</h2>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.875rem;">
+            <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); padding: 0.85rem; border-radius: var(--radius-sm);">
+              <strong>🌿 The 50/10 Focus Principle:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem;">After 50 minutes of deep study, take a 10-minute non-screen break to consolidate memory and avoid cognitive fatigue.</p>
+            </div>
+            <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); padding: 0.85rem; border-radius: var(--radius-sm);">
+              <strong>🧠 Active Recall & Spaced Repetition:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem;">Summarize formulas and diagrams from memory rather than passive re-reading to build 3x stronger neural connections.</p>
+            </div>
+            <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); padding: 0.85rem; border-radius: var(--radius-sm);">
+              <strong>😴 Sleep Hygiene:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem;">Sufficient sleep preserves long-term recall. The AI scheduler guarantees zero all-nighters by spacing workloads evenly.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: 4W Canvas & Empathy Map -->
+    <section id="tab-canvas" class="tab-pane">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title"><i data-lucide="grid" style="width:18px; height:18px; color:var(--accent-primary);"></i> Project 4W Canvas</h2></div>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="empathy-card"><h4>1. WHO</h4><p style="font-size:0.85rem; color:var(--text-muted);">Class 9–12 students preparing for school and board examinations.</p></div>
+            <div class="empathy-card"><h4>2. WHAT</h4><p style="font-size:0.85rem; color:var(--text-muted);">Difficulty prioritizing subjects, managing vast syllabi, and structuring revision.</p></div>
+            <div class="empathy-card"><h4>3. WHERE</h4><p style="font-size:0.85rem; color:var(--text-muted);">At home, school, and coaching centers during exam preparation.</p></div>
+            <div class="empathy-card"><h4>4. WHY</h4><p style="font-size:0.85rem; color:var(--text-muted);">Unstructured study causes chronic anxiety, last-minute cramming, and burnout.</p></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2 class="card-title"><i data-lucide="users" style="width:18px; height:18px; color:var(--accent-secondary);"></i> Student Empathy Map</h2></div>
+          <div class="empathy-grid">
+            <div class="empathy-card"><h4 style="color:#60a5fa;">SAYS</h4><ul><li>"There's too much syllabus."</li><li>"I'll study from tomorrow."</li><li>"I don't know where to start."</li></ul></div>
+            <div class="empathy-card"><h4 style="color:#c084fc;">THINKS</h4><ul><li>"What if I fail?"</li><li>"Others are more prepared."</li><li>"I feel constantly tired."</li></ul></div>
+            <div class="empathy-card"><h4 style="color:#f87171;">DOES</h4><ul><li>Makes timetables but breaks them.</li><li>Studies only favorite subjects.</li><li>Procrastinates on phone.</li></ul></div>
+            <div class="empathy-card"><h4 style="color:#fbbf24;">FEELS</h4><ul><li>Stressed & anxious.</li><li>Guilty for wasting time.</li><li>Overwhelmed by syllabus.</li></ul></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Capstone Project: <strong>AI-Based Smart Exam Planner</strong> | Prepared by Ananya (SSID) & Aadya (SS1A) | Aligned with UN SDGs 3 & 4</footer>
+
+  <!-- Application Logic -->
+  <script>
+    let subjects = [];
+    let scheduledDays = [];
+    let completedSlots = new Set();
+
+    function loadSampleDemo() {
+      const today = new Date();
+      const formatDate = (offsetDays) => {
+        const d = new Date(today);
+        d.setDate(d.getDate() + offsetDays);
+        return d.toISOString().split('T')[0];
+      };
+
+      subjects = [
+        { id: 'sub-1', name: 'Mathematics', examDate: formatDate(6), chapters: 8, diff: 5, conf: 2 },
+        { id: 'sub-2', name: 'Physics', examDate: formatDate(10), chapters: 6, diff: 4, conf: 2 },
+        { id: 'sub-3', name: 'Chemistry', examDate: formatDate(14), chapters: 7, diff: 3, conf: 3 },
+        { id: 'sub-4', name: 'Computer Science', examDate: formatDate(18), chapters: 5, diff: 2, conf: 4 },
+        { id: 'sub-5', name: 'English Literature', examDate: formatDate(21), chapters: 4, diff: 2, conf: 5 }
+      ];
+
+      updatePlanner();
+      generateAISchedule();
+      switchTab('schedule');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const target = document.getElementById('tab-' + tabId);
+      if (target) target.classList.add('active');
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function handleAddSubject(e) {
+      e.preventDefault();
+      const name = document.getElementById('sub-name').value.trim();
+      const date = document.getElementById('sub-date').value;
+      const chapters = parseInt(document.getElementById('sub-chapters').value);
+      const diff = parseInt(document.getElementById('sub-diff').value);
+      const conf = parseInt(document.getElementById('sub-conf').value);
+
+      if (!name || !date) return;
+      subjects.push({ id: 'sub-' + Date.now(), name, examDate: date, chapters, diff, conf });
+      document.getElementById('subject-form').reset();
+      updatePlanner();
+    }
+
+    function removeSubject(id) {
+      subjects = subjects.filter(s => s.id !== id);
+      updatePlanner();
+    }
+
+    function clearAllSubjects() {
+      subjects = [];
+      scheduledDays = [];
+      completedSlots.clear();
+      updatePlanner();
+    }
+
+    function calculatePriority(sub) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const exam = new Date(sub.examDate); exam.setHours(0, 0, 0, 0);
+      const daysLeft = Math.max(1, Math.ceil((exam - today) / (1000 * 60 * 60 * 24)));
+
+      let urgency = 5;
+      if (daysLeft > 20) urgency = 1;
+      else if (daysLeft > 14) urgency = 2;
+      else if (daysLeft > 8) urgency = 3;
+      else if (daysLeft > 4) urgency = 4;
+      else urgency = 5;
+
+      const score = (sub.diff * 0.35) + ((6 - sub.conf) * 0.35) + (urgency * 0.30);
+      return { score: parseFloat(score.toFixed(2)), daysLeft, urgency };
+    }
+
+    function updatePlanner() {
+      const tbody = document.getElementById('subject-table-body');
+      const countEl = document.getElementById('subject-count');
+      tbody.innerHTML = '';
+      countEl.innerText = subjects.length;
+
+      if (subjects.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:2rem;">No subjects configured yet. Add a subject above or click "Load Sample Demo".</td></tr>';
+        updateMatrixView();
+        return;
+      }
+
+      subjects.sort((a, b) => new Date(a.examDate) - new Date(b.examDate));
+
+      subjects.forEach(sub => {
+        const { score, daysLeft } = calculatePriority(sub);
+        let badgeClass = 'badge-low';
+        let priorityLabel = 'Low';
+        if (score >= 3.8) { badgeClass = 'badge-high'; priorityLabel = 'Critical'; }
+        else if (score >= 2.8) { badgeClass = 'badge-med'; priorityLabel = 'Moderate'; }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${sub.name}</strong></td>
+          <td>${sub.examDate}</td>
+          <td><span class="badge ${daysLeft <= 5 ? 'badge-high' : 'badge-med'}">${daysLeft} days</span></td>
+          <td>${sub.chapters} Ch.</td>
+          <td>${sub.diff}/5</td>
+          <td>${sub.conf}/5</td>
+          <td><span class="badge ${badgeClass}">${score} (${priorityLabel})</span></td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="removeSubject('${sub.id}')">
+              <i data-lucide="trash-2" style="width:12px; height:12px;"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      updateMatrixView();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function updateMatrixView() {
+      let highCount = 0;
+      let totalEstHours = 0;
+      const bars = document.getElementById('priority-bars');
+      const insights = document.getElementById('ai-insights');
+      bars.innerHTML = '';
+      insights.innerHTML = '';
+
+      if (subjects.length === 0) {
+        document.getElementById('stat-high-pri').innerText = '0';
+        document.getElementById('stat-total-hours').innerText = '0 hrs';
+        document.getElementById('stat-stress-index').innerText = 'None';
+        return;
+      }
+
+      subjects.forEach(sub => {
+        const { score, daysLeft } = calculatePriority(sub);
+        if (score >= 3.6) highCount++;
+        const subHours = Math.round(sub.chapters * (sub.diff * 1.2));
+        totalEstHours += subHours;
+
+        const barItem = document.createElement('div');
+        const pct = Math.min(100, Math.round((score / 5) * 100));
+        barItem.innerHTML = `
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:0.3rem;">
+            <span><strong>${sub.name}</strong> (${daysLeft}d left)</span>
+            <span style="font-weight:700;">${score}/5</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" style="width:${pct}%; ${score >= 3.8 ? 'background:#ef4444;' : ''}"></div>
+          </div>
+        `;
+        bars.appendChild(barItem);
+
+        const ins = document.createElement('div');
+        ins.style.cssText = "background:rgba(15,23,42,0.4); padding:0.75rem; border-radius:8px; border:1px solid var(--border-color); font-size:0.825rem;";
+        if (daysLeft <= 4) ins.innerHTML = `🚨 <strong>Urgent Countdown:</strong> ${sub.name} exam is in ${daysLeft} days. AI prioritized immediate full mock review.`;
+        else if (sub.conf <= 2 && sub.diff >= 4) ins.innerHTML = `⚠️ <strong>High Challenge Gap:</strong> ${sub.name} has low confidence and high difficulty. Assigned 2x daily blocks & revision.`;
+        else ins.innerHTML = `✅ <strong>Balanced Pace:</strong> ${sub.name} is on track with spaced active recall.`;
+        insights.appendChild(ins);
+      });
+
+      document.getElementById('stat-high-pri').innerText = highCount;
+      document.getElementById('stat-total-hours').innerText = totalEstHours + ' hrs';
+
+      const dailyAvail = parseInt(document.getElementById('daily-hours').value) || 4;
+      const daysUntilFirst = subjects.length > 0 ? calculatePriority(subjects[0]).daysLeft : 10;
+      let stress = 'Low';
+      if (totalEstHours > dailyAvail * daysUntilFirst * 1.2) stress = 'High (Strict Focus)';
+      else if (totalEstHours > dailyAvail * daysUntilFirst * 0.8) stress = 'Moderate';
+      document.getElementById('stat-stress-index').innerText = stress;
+    }
+
+    function generateAISchedule() {
+      if (subjects.length === 0) {
+        alert('Please add at least one subject first.');
+        return;
+      }
+      const dailyHours = parseInt(document.getElementById('daily-hours').value) || 4;
+      const sessionDuration = parseInt(document.getElementById('session-block').value) || 60;
+      const bufferDays = parseInt(document.getElementById('revision-buffer').value) || 2;
+      const slotsPerDay = Math.floor(dailyHours / (sessionDuration / 60));
+
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      let maxExamDate = new Date(today);
+      subjects.forEach(s => { const d = new Date(s.examDate); if (d > maxExamDate) maxExamDate = d; });
+
+      const totalPlanningDays = Math.min(30, Math.max(7, Math.ceil((maxExamDate - today) / (1000 * 60 * 60 * 24))));
+      scheduledDays = [];
+
+      const prioritized = [...subjects].map(s => ({ ...s, ...calculatePriority(s) })).sort((a, b) => b.score - a.score);
+
+      for (let i = 0; i < totalPlanningDays; i++) {
+        const curDate = new Date(today); curDate.setDate(today.getDate() + i);
+        const dateStr = curDate.toISOString().split('T')[0];
+        const dayObj = { dayIndex: i + 1, date: dateStr, slots: [] };
+
+        const active = prioritized.filter(s => new Date(s.examDate) >= curDate);
+        if (active.length === 0) continue;
+
+        for (let slot = 0; slot < slotsPerDay; slot++) {
+          const sub = active[(i + slot) % active.length];
+          const daysToSubExam = Math.ceil((new Date(sub.examDate) - curDate) / (1000 * 60 * 60 * 24));
+          
+          let slotType = 'Study Session';
+          let topicName = `Unit ${(slot % sub.chapters) + 1}: Core Concepts & Problem Solving`;
+
+          if (daysToSubExam <= bufferDays && daysToSubExam >= 0) {
+            slotType = 'Final Revision';
+            topicName = '🔥 Rapid Revision & Past Year Questions';
+          } else if (sub.conf <= 2 && slot % 2 === 1) {
+            slotType = 'Active Recall';
+            topicName = '📝 High-Yield Practice & Diagnostic Review';
+          }
+
+          const slotId = `slot-${dateStr}-${slot}`;
+          dayObj.slots.push({
+            id: slotId,
+            subject: sub.name,
+            topic: topicName,
+            type: slotType,
+            duration: sessionDuration + ' mins',
+            isCompleted: completedSlots.has(slotId)
+          });
+        }
+        scheduledDays.push(dayObj);
+      }
+
+      renderSchedule();
+      switchTab('schedule');
+    }
+
+    function renderSchedule() {
+      const container = document.getElementById('schedule-container');
+      container.innerHTML = '';
+
+      if (scheduledDays.length === 0) {
+        container.innerHTML = '<div class="card" style="text-align:center; color:var(--text-muted); padding:3rem;">No timetable generated yet. Click "Generate Smart AI Timetable".</div>';
+        updateProgress();
+        return;
+      }
+
+      scheduledDays.forEach(day => {
+        const dayCard = document.createElement('div');
+        dayCard.className = 'schedule-day';
+        const dayFormatted = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+        dayCard.innerHTML = `
+          <div class="schedule-day-header">
+            <div class="day-title">
+              <i data-lucide="calendar-check" style="width:18px; height:18px; color:var(--accent-primary);"></i>
+              Day ${day.dayIndex} — ${dayFormatted}
+            </div>
+            <span class="badge badge-med">${day.slots.length} Sessions</span>
+          </div>
+          <div class="day-slots" id="slots-day-${day.dayIndex}"></div>
+        `;
+
+        const slotsCont = dayCard.querySelector('#slots-day-' + day.dayIndex);
+        day.slots.forEach(slot => {
+          const isDone = completedSlots.has(slot.id);
+          const slotEl = document.createElement('div');
+          slotEl.className = `slot-item ${isDone ? 'completed' : ''}`;
+          slotEl.id = 'el-' + slot.id;
+
+          let badgeTypeClass = slot.type.includes('Revision') ? 'badge-rev' : (slot.type.includes('Recall') ? 'badge-med' : 'badge-low');
+
+          slotEl.innerHTML = `
+            <div class="slot-info">
+              <input type="checkbox" class="slot-checkbox" ${isDone ? 'checked' : ''} onchange="toggleSlot('${slot.id}')" />
+              <div>
+                <div style="font-weight:700; font-size:0.9rem;">${slot.subject}</div>
+                <div style="font-size:0.8rem; color:var(--text-muted);">${slot.topic}</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <span class="badge ${badgeTypeClass}">${slot.type}</span>
+              <span style="font-size:0.75rem; color:var(--text-muted);">${slot.duration}</span>
+              <button class="btn btn-secondary btn-sm" onclick="startFocusFor('${slot.subject} - ${slot.type}')" title="Start Focus Session">
+                <i data-lucide="play" style="width:12px; height:12px;"></i>
+              </button>
+            </div>
+          `;
+          slotsCont.appendChild(slotEl);
+        });
+
+        container.appendChild(dayCard);
+      });
+
+      updateProgress();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function toggleSlot(slotId) {
+      if (completedSlots.has(slotId)) completedSlots.delete(slotId);
+      else completedSlots.add(slotId);
+
+      const el = document.getElementById('el-' + slotId);
+      if (el) {
+        if (completedSlots.has(slotId)) el.classList.add('completed');
+        else el.classList.remove('completed');
+      }
+      updateProgress();
+    }
+
+    function updateProgress() {
+      let total = 0;
+      scheduledDays.forEach(d => total += d.slots.length);
+      const completed = completedSlots.size;
+      const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      document.getElementById('progress-percent').innerText = `${pct}% (${completed}/${total} Sessions Done)`;
+      document.getElementById('progress-bar').style.width = pct + '%';
+    }
+
+    function recalculateAdaptivePlan() {
+      generateAISchedule();
+      alert('Plan re-balanced! The AI algorithm redistributed remaining study hours based on your latest progress.');
+    }
+
+    // Pomodoro Timer Logic
+    let timerDuration = 25 * 60;
+    let timerRemaining = 25 * 60;
+    let timerInterval = null;
+    let isTimerRunning = false;
+
+    function formatTime(secs) {
+      const m = Math.floor(secs / 60).toString().padStart(2, '0');
+      const s = (secs % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function toggleTimer() {
+      const btn = document.getElementById('timer-start-btn');
+      if (isTimerRunning) {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        btn.innerHTML = '<i data-lucide="play" style="width:16px; height:16px;"></i> Resume Session';
+      } else {
+        isTimerRunning = true;
+        btn.innerHTML = '<i data-lucide="pause" style="width:16px; height:16px;"></i> Pause Session';
+        timerInterval = setInterval(() => {
+          if (timerRemaining > 0) {
+            timerRemaining--;
+            document.getElementById('timer-display').innerText = formatTime(timerRemaining);
+          } else {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            alert('Focus session complete! Take a well-deserved break to avoid cognitive fatigue.');
+            resetTimer();
+          }
+        }, 1000);
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      isTimerRunning = false;
+      timerRemaining = timerDuration;
+      document.getElementById('timer-display').innerText = formatTime(timerRemaining);
+      document.getElementById('timer-start-btn').innerHTML = '<i data-lucide="play" style="width:16px; height:16px;"></i> Start Session';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function setTimerPreset(mins, label) {
+      clearInterval(timerInterval);
+      isTimerRunning = false;
+      timerDuration = mins * 60;
+      timerRemaining = timerDuration;
+      document.getElementById('timer-display').innerText = formatTime(timerRemaining);
+      document.getElementById('timer-mode').innerText = label;
+      document.getElementById('timer-start-btn').innerHTML = '<i data-lucide="play" style="width:16px; height:16px;"></i> Start Session';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function startFocusFor(taskName) {
+      document.getElementById('current-focus-task').innerText = 'Active Task: ' + taskName;
+      setTimerPreset(25, 'Study Mode');
+      switchTab('focus');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSampleDemo();
+    });
+  </script>
+</body>
+</html>
